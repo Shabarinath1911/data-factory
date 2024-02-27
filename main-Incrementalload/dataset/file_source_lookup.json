@@ -1,0 +1,33 @@
+{
+	"name": "file_source_lookup",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "SqlServer1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "file_source",
+				"type": "varchar"
+			},
+			{
+				"name": "lastmodifytime",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "file_source"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

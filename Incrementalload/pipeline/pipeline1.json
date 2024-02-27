@@ -1,0 +1,173 @@
+{
+	"name": "pipeline1",
+	"properties": {
+		"activities": [
+			{
+				"name": "Water_mark",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "water_mark_lookup",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "File_source",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": "select max(lastmodifytime)as LatestDate from file_source",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "file_source_lookup",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Water_mark",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "File_source",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "select * from file_source\nwhere lastmodifytime > '@{activity('Water_mark').output.firstrow.watermarkvalue}'\nand lastmodifytime <= '@{activity('File_source').output.firstrow.LatestDate}'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "copy_activity",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "adls",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "Stored procedure1",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Copy data1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[update_watermark_table]",
+					"storedProcedureParameters": {
+						"lastmodifytime": {
+							"value": {
+								"value": "@activity('File_source').output.firstRow.LatestDate",
+								"type": "Expression"
+							},
+							"type": "DateTime"
+						},
+						"Tablename": {
+							"value": {
+								"value": "@activity('Water_mark').output.firstRow.TableName",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "SqlServer1",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2024-02-27T07:37:05Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

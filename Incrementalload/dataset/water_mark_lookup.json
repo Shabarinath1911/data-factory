@@ -1,0 +1,28 @@
+{
+	"name": "water_mark_lookup",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "SqlServer1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "TableName",
+				"type": "varchar"
+			},
+			{
+				"name": "watermarkvalue",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Water_Mark"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
